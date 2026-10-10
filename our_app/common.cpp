@@ -1,31 +1,23 @@
-#pragma once
 #include <cstddef>
 #include <string>
-#include <stdexcept>
 #include "common.h"
 
-const char SOH = 0x01;
-const char STX = 0x02;
-const char ETX = 0x03;
-
-const size_t FRAME_OVERHEAD = 5; // SOH + 2-byte length + STX + ETX
-const size_t MAX_PAYLOAD = 5000;
-
-const char* const PROTOCOL_VERSION = "T-409-TSAM protocol version 3.2";
-
 std::string encodeFRAME(const std::string& payload)
-{
-    if (payload.size() > MAX_FRAME_SIZE)
-    
-        throw std::runtime_error("Payload too large to encode in FRAME");
-    
-    
-    
-    
-    
-    
-    }
+{ 
+    if (payload.size() > MAX_PAYLOAD)
+        return "";
+    size_t total = payload.size() + FRAME_OVERHEAD;
 
+    std::string frame;
+    frame.reserve(total);
+    frame += SOH;
+    frame += static_cast<char>((total >> 8) & 0xFF);
+    frame += static_cast<char>(total & 0xFF);
+    frame += STX;
+    frame += payload;
+    frame += ETX;
+    return frame;
+}
 
 namespace Helper {
 
@@ -33,6 +25,7 @@ namespace Helper {
         // strtoul(3): converts string to unsigned long; 
         // errors via errno and endptr.
         char* endptr;
+        errno = 0;
         unsigned long val = std::strtoul(str, &endptr, 10);
 
         // endptr == str: no digits were parsed at all (e.g. "abc").

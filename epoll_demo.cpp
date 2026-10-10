@@ -1,5 +1,3 @@
-// T-4O9-TSAM protocol version 3.2
-//
 // epoll_demo.cpp - smallest useful single-threaded epoll server (echoes bytes back).
 // Linux only (raw epoll, no wrapper) - the point is to see the three calls working together.
 //
