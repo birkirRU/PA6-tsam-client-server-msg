@@ -45,7 +45,7 @@ int main(int argc, char* argv[])
         printf("Ctrl-C to terminate\n");
         exit(0);
    }
-    
+
    memset(&hints,   0, sizeof(hints));
    hints.ai_family   = AF_INET;            // IPv4 only addresses
    hints.ai_socktype = SOCK_STREAM;
@@ -144,7 +144,6 @@ int main(int argc, char* argv[])
           {
              printf("%s\n", buffer);
           }
-          printf("here\n");
        }
    }
 }
