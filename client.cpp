@@ -45,11 +45,12 @@ int main(int argc, char* argv[])
         printf("Ctrl-C to terminate\n");
         exit(0);
    }
-
+    
+   memset(&hints,   0, sizeof(hints));
    hints.ai_family   = AF_INET;            // IPv4 only addresses
    hints.ai_socktype = SOCK_STREAM;
 
-   memset(&hints,   0, sizeof(hints));
+   
 
    if(getaddrinfo(argv[1], argv[2], &hints, &svr) != 0)
    {
