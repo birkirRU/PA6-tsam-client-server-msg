@@ -2,20 +2,33 @@
 #include <string>
 #include "common.h"
 
-std::string encodeFRAME(const std::string& payload)
-{ 
-    if (payload.size() > MAX_PAYLOAD)
-        return "";
-    size_t total = payload.size() + FRAME_OVERHEAD;
 
-    std::string frame;
-    frame.reserve(total);
-    frame += SOH;
-    frame += static_cast<char>((total >> 8) & 0xFF);
-    frame += static_cast<char>(total & 0xFF);
-    frame += STX;
-    frame += payload;
-    frame += ETX;
+std::vector<char> encodeFRAME(const std::string& payload)
+{
+    if (payload.size() > MAX_PAYLOAD) {
+        return {}; 
+    }
+
+    // Calculate total expected size
+    uint16_t total_size = static_cast<uint16_t>(payload.size() + FRAME_OVERHEAD);
+
+    std::vector<char> frame;
+    frame.reserve(total_size);
+
+    // Build the frame payload sequentially
+    frame.push_back(SOH);
+    
+    // Network byte order
+    frame.push_back(static_cast<char>((total_size >> 8) & 0xFF)); // Most Significant Byte (MSB)
+    frame.push_back(static_cast<char>(total_size & 0xFF)); // Least Significant Byte (LSB)
+    
+    frame.push_back(STX);
+    
+    // Append the string contents into the vector
+    frame.insert(frame.end(), payload.begin(), payload.end());
+    
+    frame.push_back(ETX);
+
     return frame;
 }
 
