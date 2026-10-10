@@ -1,0 +1,23 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "make",
+            "type": "shell",
+            "command": "make server_debug",
+            "options": { "cwd": "${workspaceFolder}/our_app" },
+            "group": { "kind": "build", "isDefault": true },
+            "problemMatcher": ["$gcc"],
+            "detail": "Builds our_app/server_debug. Requires -g in the Makefile's CXXFLAGS -- without it there are no debug symbols to step through."
+        },
+        {
+            "label": "make clean",
+            "type": "shell",
+            "command": "make clean",
+            "options": { "cwd": "${workspaceFolder}/our_app" },
+            "problemMatcher": []
+        }
+    ]
+}
+
+
