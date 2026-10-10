@@ -4,11 +4,11 @@
         {
             "label": "make",
             "type": "shell",
-            "command": "make server_debug",
+            "command": "make tsamserver_debug tsamclient_debug",
             "options": { "cwd": "${workspaceFolder}/our_app" },
             "group": { "kind": "build", "isDefault": true },
             "problemMatcher": ["$gcc"],
-            "detail": "Builds our_app/server_debug. Requires -g in the Makefile's CXXFLAGS -- without it there are no debug symbols to step through."
+            "detail": "Builds our_app/tsamserver_debug and our_app/tsamclient_debug. Requires -g in the Makefile's CXXFLAGS -- without it there are no debug symbols to step through."
         },
         {
             "label": "make clean",

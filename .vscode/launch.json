@@ -6,8 +6,33 @@
             "name": "Debug server",
             "type": "cppdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/our_app/server",
+            "program": "${workspaceFolder}/our_app/tsamserver_debug",
             "args": [
+                "4044"
+            ],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}/",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "miDebuggerPath": "/usr/bin/gdb",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                }
+            ],
+            "preLaunchTask": "build and grant capability"
+        },
+
+        {
+            "name": "Debug client",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/our_app/tsamclient_debug",
+            "args": [
+                "127.0.0.1",
                 "4044"
             ],
             "stopAtEntry": false,

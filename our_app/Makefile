@@ -8,18 +8,18 @@ SOURCES_CLIENT = common.cpp client.cpp
 
 HEADERS = common.h server.h client.h
 
-all: server server_debug client client_debug
+all: tsamserver tsamserver_debug tsamclient tsamclient_debug
 
-server: $(SOURCES_SERVER) $(HEADERS)
+tsamserver: $(SOURCES_SERVER) $(HEADERS)
 	$(CXX) $(CXXFLAGS) $(SOURCES) -o $@
 
-server_debug: $(SOURCES_SERVER) $(HEADERS)
+tsamserver_debug: $(SOURCES_SERVER) $(HEADERS)
 	$(CXX) $(CXXFLAGS) $(CXXDEBUGFLAGS) $(SOURCES) -o $@
 
-client: $(SOURCES_CLIENT) $(HEADERS)
+tsamclient: $(SOURCES_CLIENT) $(HEADERS)
 	$(CXX) $(CXXFLAGS) $(SOURCES) -o $@
 
-client_debug: $(SOURCES_CLIENT) $(HEADERS)
+tsamclient_debug: $(SOURCES_CLIENT) $(HEADERS)
 	$(CXX) $(CXXFLAGS) $(CXXDEBUGFLAGS) $(SOURCES) -o $@
 
 clean:
