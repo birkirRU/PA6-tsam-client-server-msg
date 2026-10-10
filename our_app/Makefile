@@ -8,21 +8,21 @@ SOURCES_CLIENT = common.cpp client.cpp
 
 HEADERS = common.h server.h client.h
 
-all: server server_debug client client_debug
+all: tsamserver tsamserver_debug tsamclient tsamclient_debug
 
-server: $(SOURCES_SERVER) $(HEADERS)
-	$(CXX) $(CXXFLAGS) $(SOURCES) -o $@
+tsamserver: $(SOURCES_SERVER) $(HEADERS)
+	$(CXX) $(CXXFLAGS) $(SOURCES_SERVER) -o $@
 
-server_debug: $(SOURCES_SERVER) $(HEADERS)
-	$(CXX) $(CXXFLAGS) $(CXXDEBUGFLAGS) $(SOURCES) -o $@
+tsamserver_debug: $(SOURCES_SERVER) $(HEADERS)
+	$(CXX) $(CXXFLAGS) $(CXXDEBUGFLAGS) $(SOURCES_SERVER) -o $@
 
-client: $(SOURCES_CLIENT) $(HEADERS)
-	$(CXX) $(CXXFLAGS) $(SOURCES) -o $@
+tsamclient: $(SOURCES_CLIENT) $(HEADERS)
+	$(CXX) $(CXXFLAGS) $(SOURCES_CLIENT) -o $@
 
-client_debug: $(SOURCES_CLIENT) $(HEADERS)
-	$(CXX) $(CXXFLAGS) $(CXXDEBUGFLAGS) $(SOURCES) -o $@
+tsamclient_debug: $(SOURCES_CLIENT) $(HEADERS)
+	$(CXX) $(CXXFLAGS) $(CXXDEBUGFLAGS) $(SOURCES_CLIENT) -o $@
 
 clean:
-	rm -f server server_debug client client_debug
+	rm -f tsamserver tsamserver_debug tsamclient tsamclient_debug
 
 .PHONY: all clean
