@@ -11,18 +11,18 @@ HEADERS = common.h server.h client.h
 all: tsamserver tsamserver_debug tsamclient tsamclient_debug
 
 tsamserver: $(SOURCES_SERVER) $(HEADERS)
-	$(CXX) $(CXXFLAGS) $(SOURCES) -o $@
+	$(CXX) $(CXXFLAGS) $(SOURCES_SERVER) -o $@
 
 tsamserver_debug: $(SOURCES_SERVER) $(HEADERS)
-	$(CXX) $(CXXFLAGS) $(CXXDEBUGFLAGS) $(SOURCES) -o $@
+	$(CXX) $(CXXFLAGS) $(CXXDEBUGFLAGS) $(SOURCES_SERVER) -o $@
 
 tsamclient: $(SOURCES_CLIENT) $(HEADERS)
-	$(CXX) $(CXXFLAGS) $(SOURCES) -o $@
+	$(CXX) $(CXXFLAGS) $(SOURCES_CLIENT) -o $@
 
 tsamclient_debug: $(SOURCES_CLIENT) $(HEADERS)
-	$(CXX) $(CXXFLAGS) $(CXXDEBUGFLAGS) $(SOURCES) -o $@
+	$(CXX) $(CXXFLAGS) $(CXXDEBUGFLAGS) $(SOURCES_CLIENT) -o $@
 
 clean:
-	rm -f server server_debug client client_debug
+	rm -f tsamserver tsamserver_debug tsamclient tsamclient_debug
 
 .PHONY: all clean
