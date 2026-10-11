@@ -6,6 +6,9 @@
 #include <cstring>
 #include <arpa/inet.h>
 #include <unordered_map>
+#include <cstdint>
+#include <cerrno>
+#include <cstdlib>
 
 
 
