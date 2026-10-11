@@ -39,11 +39,15 @@ namespace comproto {
             client sender;
             client recipient;
             std::string message;
+
+            sendmsg(client s, client r, std::string m): sender(s), recipient(r), message(m) {};
         };
 
         struct getmsg {
             const std::string command_name = "GETMSG";
             client user;
+
+            getmsg(client u): user(u) {};
         };
 
 
