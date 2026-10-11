@@ -153,7 +153,7 @@ namespace comproto {
     }
 }
 
-namespace Helper {
+namespace tool {
 
     unsigned int parse_port(const char* str, const char* label) {
         // strtoul(3): converts string to unsigned long; 
