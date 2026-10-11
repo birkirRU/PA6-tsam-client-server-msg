@@ -21,7 +21,7 @@
 int main(int argc, char** argv) {
     if (argc != 2) { fprintf(stderr, "usage: %s <port>\n", argv[0]); return 1; }
 
-	unsigned int listening_port = tool::parse_port(argv[2], "listening port");
+	unsigned int listening_port = tool::parse_port(argv[1], "listening port");
 
 
     // Create main listening socket that accepts new client connections
