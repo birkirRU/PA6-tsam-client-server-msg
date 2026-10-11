@@ -45,8 +45,12 @@ namespace comproto {
             const std::string command_name = "GETMSG";
             client user;
         };
-    }
 
+
+        struct statusreq {
+            const std::string command_name = "STATUSREQ";
+        };
+    }
 }
 
 namespace Helper {
