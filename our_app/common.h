@@ -6,6 +6,9 @@
 #include <cstring>
 #include <arpa/inet.h>
 
+
+int extracframes(std::string& buf, std::vector<std::string>& out);
+
 // Communication Protocol interface
 namespace comproto {
 
@@ -77,6 +80,5 @@ namespace comproto {
 namespace Helper {
     unsigned int parse_port(const char* str, const char* label);
 }
-
 
 
