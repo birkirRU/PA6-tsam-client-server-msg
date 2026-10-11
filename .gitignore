@@ -1,0 +1,4 @@
+# Ignore all files at the root level that do not have an extension
+/*
+!/*/
+!*.*
