@@ -18,12 +18,16 @@ namespace comproto {
 
     // Client-side helper that builds the user name that goes on the wire.
     // NOTE: messages store plain strings, because the wire carries no (name, ID) split.
+
+    // The one id used everywhere (network, server, client) to identify a client.
+    // It is assigned when the connection is accepted.
+    using ClientID = uint64_t;
     struct client {
         std::string name;
-        uint64_t ID;
+        ClientID ID;
 
         client(std::string n, uint64_t id) : name(std::move(n)), ID(id) {}
-
+        
         std::string get_UID() const { return name + std::to_string(ID); }
     };
 
