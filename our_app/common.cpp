@@ -2,15 +2,14 @@
 #include <string>
 #include "common.h"
 
-
-std::vector<char> encodeFRAME(const std::string& payload)
+std::vector<char> comproto::frame::encode(const std::string& command)
 {
-    if (payload.size() > MAX_PAYLOAD) {
+    if (command.size() > MAX_PAYLOAD) {
         return {}; 
     }
 
     // Calculate total expected size
-    uint16_t total_size = static_cast<uint16_t>(payload.size() + FRAME_OVERHEAD);
+    uint16_t total_size = static_cast<uint16_t>(command.size() + FRAME_OVERHEAD);
 
     std::vector<char> frame;
     frame.reserve(total_size);
@@ -25,7 +24,7 @@ std::vector<char> encodeFRAME(const std::string& payload)
     frame.push_back(STX);
     
     // Append the string contents into the vector
-    frame.insert(frame.end(), payload.begin(), payload.end());
+    frame.insert(frame.end(), command.begin(), command.end());
     
     frame.push_back(ETX);
 
