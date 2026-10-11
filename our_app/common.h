@@ -183,4 +183,7 @@ namespace tool {
     unsigned int parse_port(const char* str, const char* label);
 }
 
+// Sends every byte of data, retrying partial sends. false = connection broken.
+bool sendAll(int fd, const std::vector<char>& data);
+
 
