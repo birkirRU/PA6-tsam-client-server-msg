@@ -6,7 +6,6 @@
 #include <cstring>
 #include <arpa/inet.h>
 
-
 // Communication Protocol interface
 namespace comproto {
 
@@ -15,7 +14,7 @@ namespace comproto {
         uint64_t ID;
         
         // universal application UID of client.
-        std::string get_UID() {return name + std::to_string(ID); } ;
+        std::string get_UID() const {return name + std::to_string(ID); } ;
 
         // enforce setting the name and ID upon instantiation of client identifier
         client(std::string n, double id) : name(n), ID(id) {}
@@ -34,25 +33,43 @@ namespace comproto {
     }
 
     namespace command {
+
+        inline const auto format = [](const auto& first, const auto&... rest) -> std::string {
+            // Fold Expression: loops through 'rest' and appends "," + item to the first item
+            std::string result = first;
+            ((result += "," + rest), ...); 
+            return result;
+            };
+
+        // -- Defined commands --
         struct sendmsg {
             const std::string command_name = "SENDMSG";
             client sender;
             client recipient;
             std::string message;
 
-            sendmsg(client s, client r, std::string m): sender(s), recipient(r), message(m) {};
+            sendmsg(client s, client r, std::string m) : sender(s), recipient(r), message(m) {}
+            std::string to_string() const {
+                return command::format(command_name, sender.get_UID(), recipient.get_UID(), message);
+            }
         };
 
         struct getmsg {
             const std::string command_name = "GETMSG";
             client user;
 
-            getmsg(client u): user(u) {};
+            getmsg(client u) : user(u) {}
+            std::string to_string() const {
+                return command::format(command_name,user.get_UID());
+            }
         };
-
 
         struct statusreq {
             const std::string command_name = "STATUSREQ";
+
+            std::string to_string() const {
+                return command::format(command_name);
+            }
         };
     }
 }
