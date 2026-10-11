@@ -13,7 +13,7 @@ namespace comproto {
         std::string name;
         uint64_t ID;
         
-        // universal application UID of client.
+        // Application UID of client.
         std::string get_UID() const {return name + std::to_string(ID); } ;
 
         // enforce setting the name and ID upon instantiation of client identifier
