@@ -4,6 +4,7 @@
 
 #include <cerrno>
 #include <cstdlib>
+#include <ctime>
 #include <iostream>
 #include <unordered_map>
 
@@ -385,6 +386,20 @@ namespace tool {
 
         return (unsigned int) val;
     }
+
+    namespace {
+        std::string format_now(const char* fmt) {
+            std::time_t t = std::time(nullptr);
+            std::tm tm{};
+            localtime_r(&t, &tm);
+            char buf[64];
+            size_t n = std::strftime(buf, sizeof buf, fmt, &tm);
+            return std::string(buf, n);
+        }
+    }
+
+    std::string log_timestamp()     { return format_now("%d/%b/%Y:%H:%M:%S %z"); }
+    std::string display_timestamp() { return format_now("%Y-%m-%d %H:%M:%S"); }
 }
 
 bool sendAll(int fd, const std::vector<char>& data)

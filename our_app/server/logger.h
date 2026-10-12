@@ -1,15 +1,13 @@
 #pragma once
-#include <ctime>
 #include <fstream>
 #include <string>
 
-// Writes one timestamped line to server.log.
+#include "../common.h"
+
+// Writes one timestamped line to server.log:
+//   [12/Oct/2026:18:23:45 +0000] <line>
+// The timestamp is local time with its UTC offset (Common Log Format).
 inline void logmsg(const std::string& line) {
     static std::ofstream out("server.log", std::ios::app);
-    std::time_t t = std::time(nullptr);
-    std::tm tm{};
-    localtime_r(&t, &tm);
-    char ts[32];
-    std::strftime(ts, sizeof ts, "%Y-%m-%d %H:%M:%S", &tm);
-    out << ts << ' ' << line << std::endl;  // endl flushes
+    out << '[' << tool::log_timestamp() << "] " << line << std::endl;  // endl flushes
 }

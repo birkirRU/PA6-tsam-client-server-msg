@@ -269,6 +269,12 @@ namespace comproto {
 namespace tool {
     // Parses a TCP port (0-65535). Prints an error and exits on invalid input.
     unsigned int parse_port(const char* str, const char* label);
+
+    // Current local time for the server log, Common Log Format: "12/Oct/2026:18:23:45 +0000".
+    std::string log_timestamp();
+
+    // Current local time for the client printout: "2026-10-12 18:23:45".
+    std::string display_timestamp();
 }
 
 // Sends every byte of data, retrying partial sends. false = connection broken.
