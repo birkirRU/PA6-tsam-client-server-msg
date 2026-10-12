@@ -1,16 +1,26 @@
 #include "server.h"
 
 #include <algorithm>
+#include <csignal>
 #include <exception>
 
 #include "logger.h"
 
 using namespace comproto;
 
+namespace {
+    volatile std::sig_atomic_t stop_signal = 0;
+
+    std::string client_tag(ClientID id) { return "client " + std::to_string(id); }
+}
+
+void Server::request_stop(int signal_number) { stop_signal = signal_number; }
+
 // A C++ exception (e.g. std::bad_alloc) while serving one command is logged and the
 // loop continues; only that command is lost. Fatal system errors exit via fatal().
+// A stop request interrupts the sleep in net_.wait() (EINTR), so it is seen at once.
 void Server::run() {
-    for (;;) {
+    while (stop_signal == 0) {
         try {
             std::vector<Incoming> incoming = net_.wait();  // network turn
             buffering_turn(incoming);
@@ -20,6 +30,16 @@ void Server::run() {
             logmsg(std::string("ERROR exception in main loop: ") + e.what());
         }
     }
+    logmsg("shutting down on signal " + std::to_string(stop_signal) + ": " + state_summary() +
+           " (stored messages are not kept)");
+}
+
+// "3 connected, 2 logged in, 5 message(s) stored for 2 user(s)"
+std::string Server::state_summary() const {
+    return std::to_string(net_.client_count()) + " connected, " +
+           std::to_string(uid_of_.size()) + " logged in, " +
+           std::to_string(stored_total_) + " message(s) stored for " +
+           std::to_string(store_.size()) + " user(s)";
 }
 
 // Bytes -> complete payloads, queued in arrival order.
@@ -37,7 +57,7 @@ void Server::buffering_turn(const std::vector<Incoming>& incoming) {
         frame::extract_frames(buf, payloads, &problems);
         for (std::string& p : payloads) pending_.push_back({in.id, std::move(p)});
         for (const std::string& why : problems)
-            logmsg("client " + std::to_string(in.id) + ": discarded bytes: " + why);
+            logmsg(client_tag(in.id) + ": discarded bytes: " + why);
     }
 }
 
@@ -48,7 +68,7 @@ void Server::processing_turn() {
         try {
             handle(from, payload);
         } catch (const std::exception& e) {
-            logmsg("client " + std::to_string(from) + ": ERROR exception while handling command: " + e.what());
+            logmsg(client_tag(from) + ": ERROR exception while handling command: " + e.what());
         }
     }
 }
@@ -56,17 +76,33 @@ void Server::processing_turn() {
 // Forget everything tied to connections that ended. Stored messages stay.
 void Server::disconnect_turn() {
     for (ClientID id : closed_) {
-        inbuf_.erase(id);
-        uid_of_.erase(id);
+        auto buf = inbuf_.find(id);
+        if (buf != inbuf_.end()) {
+            if (!buf->second.empty())
+                logmsg(client_tag(id) + ": dropped " + std::to_string(buf->second.size()) +
+                       " bytes of an incomplete frame");
+            inbuf_.erase(buf);
+        }
+        auto user = uid_of_.find(id);
+        if (user != uid_of_.end()) {
+            std::string uid = user->second;
+            uid_of_.erase(user);
+            logmsg("STATE " + uid + " logged out; " + state_summary());
+        }
     }
     closed_.clear();
 }
 
 void Server::handle(ClientID from, const std::string& payload) {
-    logmsg("client " + std::to_string(from) + " RECV " + payload);
+    logmsg(client_tag(from) + " RECV " + printable(payload));
 
     std::unique_ptr<base_com> cmd = decode_command(payload);
     if (cmd == nullptr) {
+        std::string name = payload.substr(0, payload.find(','));
+        if (is_known_command(name))
+            logmsg(client_tag(from) + ": rejected malformed " + name + " command");
+        else
+            logmsg(client_tag(from) + ": rejected unknown command '" + printable(name) + "'");
         reply(from, reply::error());
         return;
     }
@@ -83,22 +119,32 @@ void Server::handle(ClientID from, const std::string& payload) {
 // they do not have to be online.
 void Server::handle_sendmsg(ClientID from, const command::sendmsg& cmd) {
     if (known_users_.count(cmd.recipient) == 0) {
+        logmsg(client_tag(from) + ": SENDMSG not stored, " + cmd.recipient + " has never logged in");
         reply(from, reply::sendmsg(false, ""));
         return;
     }
-    store_[cmd.recipient].push_back({cmd.sender, cmd.message});
+    std::deque<StoredMsg>& q = store_[cmd.recipient];
+    q.push_back({cmd.sender, cmd.message});
+    stored_total_++;
+    logmsg("STATE stored message from " + cmd.sender + " for " + cmd.recipient + " (" +
+           std::to_string(q.size()) + " waiting for them); " + state_summary());
     reply(from, reply::sendmsg(true, cmd.recipient));
 }
 
 void Server::handle_getmsg(ClientID from, const command::getmsg& cmd) {
     auto it = store_.find(cmd.user);
     if (it == store_.end()) {
+        logmsg(client_tag(from) + ": no message stored for " + cmd.user);
         reply(from, reply::getmsg());
         return;
     }
     StoredMsg m = std::move(it->second.front());
     it->second.pop_front();
-    if (it->second.empty()) store_.erase(it);  // keeps STATUSREQ exact
+    stored_total_--;
+    size_t left = it->second.size();
+    if (left == 0) store_.erase(it);  // keeps STATUSREQ exact
+    logmsg("STATE delivered and deleted message from " + m.from + " for " + cmd.user + " (" +
+           std::to_string(left) + " left for them); " + state_summary());
     reply(from, reply::getmsg(m.text));
 }
 
@@ -125,6 +171,7 @@ void Server::handle_login(ClientID from, const command::login& cmd) {
     std::string uid = make_uid(cmd.user_name, from);
     uid_of_[from] = uid;
     known_users_.insert(uid);
+    logmsg("STATE " + client_tag(from) + " logged in as " + uid + "; " + state_summary());
     reply(from, reply::login(true, uid));
 }
 
@@ -133,12 +180,12 @@ void Server::reply(ClientID to, const response& rep) {
     std::string text = rep.to_string();
     std::vector<char> bytes = frame::encode_payload(text);
     if (bytes.empty()) {
-        logmsg("client " + std::to_string(to) + ": ERROR reply too long to frame (" +
+        logmsg(client_tag(to) + ": ERROR reply too long to frame (" +
                std::to_string(text.size()) + " bytes), not sent");
         return;
     }
     if (net_.send_to(to, bytes))
-        logmsg("client " + std::to_string(to) + " SEND " + text);
+        logmsg(client_tag(to) + " SEND " + printable(text));
     else
-        logmsg("client " + std::to_string(to) + ": reply dropped, client is gone: " + text);
+        logmsg(client_tag(to) + ": reply dropped, client is gone: " + printable(text));
 }

@@ -256,6 +256,10 @@ namespace comproto {
         }
     }
 
+    bool is_known_command(const std::string& name) {
+        return command_registry().count(name) != 0;
+    }
+
     std::unique_ptr<base_com> decode_command(const std::string& payload) {
         // Command name = everything before the first comma (or the whole payload).
         auto it = command_registry().find(payload.substr(0, payload.find(',')));

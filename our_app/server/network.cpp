@@ -185,6 +185,7 @@ bool Network::flush(comproto::ClientID id) {
         c.want_write = want;
         if (want) logmsg("client " + std::to_string(id) + ": " + std::to_string(c.out.size()) +
                          " bytes queued, waiting for the client to read");
+        else      logmsg("client " + std::to_string(id) + ": queued output fully sent");
     }
     return true;
 }

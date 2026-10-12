@@ -14,7 +14,12 @@
 class Server {
 public:
     explicit Server(uint16_t port) : net_(port) {}
-    void run();  // the main loop
+
+    // The main loop. Returns after request_stop() was called (e.g. from a signal handler).
+    void run();
+
+    // Async-signal-safe: asks run() to return at the next opportunity.
+    static void request_stop(int signal_number);
 
 private:
     struct StoredMsg {
@@ -34,6 +39,7 @@ private:
     void handle_login(comproto::ClientID from, const comproto::command::login& cmd);
 
     void reply(comproto::ClientID to, const comproto::response& rep);
+    std::string state_summary() const;
 
     Network net_;
     std::unordered_map<comproto::ClientID, std::string> inbuf_;  // per client: bytes not yet forming a full frame
@@ -43,4 +49,5 @@ private:
     std::unordered_map<comproto::ClientID, std::string> uid_of_;  // logged-in connections -> UID
     std::set<std::string> known_users_;                           // every UID ever handed out
     std::map<std::string, std::deque<StoredMsg>> store_;          // UID -> messages, oldest first
+    size_t stored_total_ = 0;                                     // sum of all queue sizes in store_
 };

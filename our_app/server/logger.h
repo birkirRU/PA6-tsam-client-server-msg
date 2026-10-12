@@ -16,11 +16,26 @@ namespace serverlog {
         return out;
     }
 
-    // Opens the log for appending. false (with errno set) if it cannot be opened.
+    // Opens the log, emptying it: every server run gets its own log, so the log of a demo
+    // session matches its packet trace and client output. false (errno set) on failure.
     inline bool open(const char* path) {
-        stream().open(path, std::ios::app);
+        stream().open(path, std::ios::trunc);
         return stream().is_open();
     }
+}
+
+// Client-supplied text made safe for a one-line log entry: control characters and
+// non-ASCII bytes are shown as \xNN, so a payload can never break or forge log lines.
+inline std::string printable(const std::string& s) {
+    static const char* hex = "0123456789abcdef";
+    std::string out;
+    for (unsigned char c : s) {
+        if (c >= 0x20 && c < 0x7f && c != '\\') { out += static_cast<char>(c); continue; }
+        out += "\\x";
+        out += hex[c >> 4];
+        out += hex[c & 0xf];
+    }
+    return out;
 }
 
 // Writes one line to the log. A failing write (e.g. disk full) never stops the

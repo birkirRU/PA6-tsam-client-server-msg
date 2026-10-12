@@ -237,6 +237,9 @@ namespace comproto {
         };
     }
 
+    // true if `name` is a command this protocol defines ("SENDMSG", ...).
+    bool is_known_command(const std::string& name);
+
     // Payload -> command. nullptr if the command is unknown or malformed.
     std::unique_ptr<base_com> decode_command(const std::string& payload);
 
