@@ -1,17 +1,24 @@
 #include "server.h"
 
 #include <algorithm>
+#include <exception>
 
 #include "logger.h"
 
 using namespace comproto;
 
+// A C++ exception (e.g. std::bad_alloc) while serving one command is logged and the
+// loop continues; only that command is lost. Fatal system errors exit via fatal().
 void Server::run() {
     for (;;) {
-        std::vector<Incoming> incoming = net_.wait();  // network turn
-        buffering_turn(incoming);
-        processing_turn();
-        disconnect_turn();
+        try {
+            std::vector<Incoming> incoming = net_.wait();  // network turn
+            buffering_turn(incoming);
+            processing_turn();
+            disconnect_turn();
+        } catch (const std::exception& e) {
+            logmsg(std::string("ERROR exception in main loop: ") + e.what());
+        }
     }
 }
 
@@ -38,7 +45,11 @@ void Server::processing_turn() {
     while (!pending_.empty()) {
         auto [from, payload] = std::move(pending_.front());
         pending_.pop_front();
-        handle(from, payload);
+        try {
+            handle(from, payload);
+        } catch (const std::exception& e) {
+            logmsg("client " + std::to_string(from) + ": ERROR exception while handling command: " + e.what());
+        }
     }
 }
 
@@ -117,7 +128,17 @@ void Server::handle_login(ClientID from, const command::login& cmd) {
     reply(from, reply::login(true, uid));
 }
 
+// Logs SEND only when the reply was actually handed to the connection.
 void Server::reply(ClientID to, const response& rep) {
-    net_.send_to(to, frame::encode(&rep));
-    logmsg("client " + std::to_string(to) + " SEND " + rep.to_string());
+    std::string text = rep.to_string();
+    std::vector<char> bytes = frame::encode_payload(text);
+    if (bytes.empty()) {
+        logmsg("client " + std::to_string(to) + ": ERROR reply too long to frame (" +
+               std::to_string(text.size()) + " bytes), not sent");
+        return;
+    }
+    if (net_.send_to(to, bytes))
+        logmsg("client " + std::to_string(to) + " SEND " + text);
+    else
+        logmsg("client " + std::to_string(to) + ": reply dropped, client is gone: " + text);
 }

@@ -20,9 +20,11 @@ private:
     void send_line(const std::string& line);
     void handle_reply(const std::string& payload);
     void print(const char* tag, const std::string& text);
+    void fail(const std::string& why);
 
     int sock_ = -1;
     bool running_ = true;
+    int exit_code_ = 0;
     bool stdin_open_ = true;
     std::string input_;              // typed text not yet ended by a newline
     std::string recv_buf_;           // server bytes not yet forming a full frame

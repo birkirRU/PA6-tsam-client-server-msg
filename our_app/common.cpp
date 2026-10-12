@@ -379,8 +379,9 @@ namespace tool {
             exit(1);
         }
         // ERANGE: value too large to fit in unsigned long.
-        if (errno == ERANGE || val > 65535) {
-            std::cerr << label << " is out of valid port range (0-65535): " << str << std::endl;
+        // Port 0 means "any free port" to bind() and is never a valid port to connect to.
+        if (errno == ERANGE || val < 1 || val > 65535) {
+            std::cerr << label << " is out of valid port range (1-65535): " << str << std::endl;
             exit(1);
         }
 

@@ -8,6 +8,7 @@
 #include <cerrno>
 #include <csignal>
 #include <cstdio>
+#include <cstring>
 #include <memory>
 #include <string>
 #include <vector>
@@ -17,8 +18,27 @@
 namespace {
     // After stdin closes, wait at most this long for outstanding replies.
     const int REPLY_TIMEOUT_MS = 5000;
+
+    // connect() that survives a signal. An interrupted connect() keeps going in the
+    // background, so instead of calling it again we wait until the socket is writable
+    // and read the final result from SO_ERROR. Returns 0, or -1 with errno set.
+    int connect_retrying(int fd, const sockaddr* addr, socklen_t len) {
+        if (connect(fd, addr, len) == 0) return 0;
+        if (errno != EINTR) return -1;
+
+        struct pollfd p{fd, POLLOUT, 0};
+        while (poll(&p, 1, -1) < 0)
+            if (errno != EINTR) return -1;
+
+        int err = 0;
+        socklen_t err_len = sizeof err;
+        if (getsockopt(fd, SOL_SOCKET, SO_ERROR, &err, &err_len) < 0) return -1;
+        if (err != 0) { errno = err; return -1; }
+        return 0;
+    }
 }
 
+// Tries every IPv4 address the host name resolves to, in order.
 Client::Client(const char* host, const char* port) {
     struct addrinfo hints{};
     hints.ai_family = AF_INET;        // IPv4
@@ -27,25 +47,31 @@ Client::Client(const char* host, const char* port) {
     struct addrinfo* res = nullptr;
     int rc = getaddrinfo(host, port, &hints, &res);
     if (rc != 0) {
-        fprintf(stderr, "getaddrinfo: %s\n", gai_strerror(rc));
+        // getaddrinfo reports through its return value, not errno (except EAI_SYSTEM).
+        fprintf(stderr, "cannot resolve %s: %s\n", host,
+                rc == EAI_SYSTEM ? strerror(errno) : gai_strerror(rc));
         exit(1);
     }
 
-    sock_ = socket(res->ai_family, res->ai_socktype, 0);
-    if (sock_ < 0) {
-        perror("socket");
-        freeaddrinfo(res);
-        exit(1);
+    int last_errno = 0;
+    for (struct addrinfo* ai = res; ai != nullptr && sock_ < 0; ai = ai->ai_next) {
+        int fd = socket(ai->ai_family, ai->ai_socktype, ai->ai_protocol);
+        if (fd < 0) { last_errno = errno; continue; }
+        if (connect_retrying(fd, ai->ai_addr, ai->ai_addrlen) < 0) {
+            last_errno = errno;
+            close(fd);
+            continue;
+        }
+        sock_ = fd;
     }
-
-    if (connect(sock_, res->ai_addr, res->ai_addrlen) < 0) {
-        perror("connect");
-        close(sock_);
-        freeaddrinfo(res);
-        exit(1);
-    }
-
     freeaddrinfo(res);
+
+    if (sock_ < 0) {
+        // e.g. "Connection refused" (nothing listening), "Network is unreachable", "Connection timed out"
+        fprintf(stderr, "cannot connect to %s:%s: %s\n", host, port, strerror(last_errno));
+        exit(1);
+    }
+
     print("INFO", std::string("connected to ") + host + ":" + port);
     print("INFO", "commands: LOGIN,<name>  SENDMSG,<from>,<to>,<message>  GETMSG,<uid>  STATUSREQ  LISTUSERS");
 }
@@ -74,14 +100,15 @@ int Client::run() {
             return 1;
         }
         if (n == 0) {
-            print("INFO", "no reply to " + std::to_string(sent_.size()) + " command(s), giving up");
+            print("ERROR", "no reply to " + std::to_string(sent_.size()) + " command(s), giving up");
+            exit_code_ = 1;
             break;
         }
 
         if (fds[0].revents & (POLLIN | POLLHUP | POLLERR)) on_stdin_readable();
         if (running_ && (fds[1].revents & (POLLIN | POLLHUP | POLLERR))) on_socket_readable();
     }
-    return 0;
+    return exit_code_;
 }
 
 // Reads whatever the user typed and sends every complete line.
@@ -90,7 +117,11 @@ void Client::on_stdin_readable() {
     char tmp[1024];
     ssize_t r = read(STDIN_FILENO, tmp, sizeof tmp);
     if (r < 0 && errno == EINTR) return;
-    if (r <= 0) {                        // 0 = Ctrl-D / end of piped input
+    if (r < 0) {
+        fail(std::string("reading stdin: ") + strerror(errno));
+        return;
+    }
+    if (r == 0) {                        // Ctrl-D / end of piped input
         if (!input_.empty()) send_line(input_);  // last line without a newline
         input_.clear();
         stdin_open_ = false;
@@ -117,9 +148,8 @@ void Client::send_line(const std::string& raw) {
                        " bytes), not sent");
         return;
     }
-    if (!sendAll(sock_, frame)) {
-        perror("send");
-        running_ = false;
+    if (!sendAll(sock_, frame)) {        // e.g. EPIPE / ECONNRESET: the server is gone
+        fail(std::string("send: ") + strerror(errno));
         return;
     }
     print("SENT", line);
@@ -132,12 +162,12 @@ void Client::on_socket_readable() {
     if (r == 0) {
         print("INFO", "server closed the connection");
         running_ = false;
+        if (!sent_.empty()) exit_code_ = 1;  // replies we were still waiting for are lost
         return;
     }
     if (r < 0) {
         if (errno == EINTR) return;
-        perror("recv");
-        running_ = false;
+        fail(std::string("recv: ") + strerror(errno));
         return;
     }
     recv_buf_.append(tmp, r);
@@ -171,8 +201,21 @@ void Client::handle_reply(const std::string& payload) {
     }
 }
 
+// A failing stdout (disk full, closed pipe) stops the client: its output is the point.
 void Client::print(const char* tag, const std::string& text) {
-    printf("%s %s: %s\n", tool::display_timestamp().c_str(), tag, text.c_str());
+    if (printf("%s %s: %s\n", tool::display_timestamp().c_str(), tag, text.c_str()) < 0) {
+        fprintf(stderr, "tsamclient: writing to stdout failed: %s\n", strerror(errno));
+        running_ = false;
+        exit_code_ = 1;
+    }
+}
+
+// Unrecoverable error: report on stderr and in the output, then stop.
+void Client::fail(const std::string& why) {
+    fprintf(stderr, "tsamclient: %s\n", why.c_str());
+    print("ERROR", why);
+    running_ = false;
+    exit_code_ = 1;
 }
 
 int main(int argc, char* argv[]) {

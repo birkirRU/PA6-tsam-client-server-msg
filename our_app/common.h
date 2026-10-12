@@ -267,7 +267,8 @@ namespace comproto {
 }
 
 namespace tool {
-    // Parses a TCP port (0-65535). Prints an error and exits on invalid input.
+    // Parses a TCP port (1-65535). Prints an error and exits on invalid input.
+    // Ports below 1024 are accepted here; binding to them fails without privileges.
     unsigned int parse_port(const char* str, const char* label);
 
     // Current local time for the server log, Common Log Format: "12/Oct/2026:18:23:45 +0000".
