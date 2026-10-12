@@ -1,5 +1,8 @@
 #pragma once
 #include <deque>
+#include <map>
+#include <memory>
+#include <set>
 #include <string>
 #include <unordered_map>
 #include <utility>
@@ -21,11 +24,23 @@ private:
 
     void buffering_turn(const std::vector<Incoming>& incoming);
     void processing_turn();
-    void handle(comproto::ClientID from, comproto::base_com* msg);
-    void reply(comproto::ClientID to, const std::string& text);
+    void disconnect_turn();
+
+    void handle(comproto::ClientID from, const std::string& payload);
+    void handle_sendmsg(comproto::ClientID from, const comproto::command::sendmsg& cmd);
+    void handle_getmsg(comproto::ClientID from, const comproto::command::getmsg& cmd);
+    void handle_statusreq(comproto::ClientID from);
+    void handle_listusers(comproto::ClientID from);
+    void handle_login(comproto::ClientID from, const comproto::command::login& cmd);
+
+    void reply(comproto::ClientID to, const comproto::response& rep);
 
     Network net_;
     std::unordered_map<comproto::ClientID, std::string> inbuf_;  // per client: bytes not yet forming a full frame
-    std::deque<std::pair<comproto::ClientID, comproto::base_com*>> pending_;  // decoded commands, arrival order
-    std::unordered_map<std::string, std::deque<StoredMsg>> store_;           // username -> messages
+    std::deque<std::pair<comproto::ClientID, std::string>> pending_;  // complete payloads, arrival order
+    std::vector<comproto::ClientID> closed_;                     // connections that ended this turn
+
+    std::unordered_map<comproto::ClientID, std::string> uid_of_;  // logged-in connections -> UID
+    std::set<std::string> known_users_;                           // every UID ever handed out
+    std::map<std::string, std::deque<StoredMsg>> store_;          // UID -> messages, oldest first
 };
