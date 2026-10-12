@@ -3,163 +3,144 @@
 A mail server (`tsamserver`) and a client (`tsamclient`) that talk over TCP using
 the framed protocol from the assignment.
 
+| File | Contents |
+|---|---|
+| `server.cpp` | The server: one epoll loop, the message store and the log |
+| `client.cpp` | The client: a poll loop over stdin and the server socket |
+| `common.h/.cpp` | Shared code: framing, command field splitting, name check, timestamps |
+
 ## Compiling and running
 
 ```bash
-make                    # builds tsamserver and tsamclient (plus *_debug variants with -g)
+make                    # builds tsamserver and tsamclient
 ./tsamserver 4044       # listen on port 4044 (any port 1-65535)
 ./tsamclient 127.0.0.1 4044
 ```
 
-`make tsamserver` / `make tsamclient` build one program; `make clean` removes the binaries.
-Requires `g++` with C++20 support and `make`. No third-party libraries are used.
+`make debug` builds `tsamserver_debug` and `tsamclient_debug` with `-g`, and
+`make clean` removes the binaries. Building needs `g++` (C++20) and `make`. No
+third-party libraries are used.
 
-The server writes its log to `server.log` in the directory it is started from.
-The file is emptied at every start, so each run produces the log of one session.
-Stop the server with Ctrl-C (or `kill`); it then writes a final shutdown line.
+The server logs to `server.log` in the directory it is started from. The file is
+emptied at every start, so one run produces the log of one session. Stop the server
+with Ctrl-C (or `kill`), which writes a final log line.
 
-The client reads commands from stdin, one per line, and prints to stdout. To save a
-session: `./tsamclient 127.0.0.1 4044 | tee client-output.txt`.
+The client reads one command per line from stdin. To record a session:
+`./tsamclient 127.0.0.1 4044 | tee client-output.txt`.
 
 ## Operating system
 
-- **Server:** Linux only. It uses `epoll`, `accept4` and `SOCK_NONBLOCK`.
-  It must be built and tested on Linux, such as the TSAM server (Ubuntu 24.04).
-- **Client:** portable POSIX (uses `poll`). It was developed on macOS 27 and runs on Linux.
+The server runs on **Linux only**, because it uses `epoll`, `accept4`, `SOCK_NONBLOCK`
+and `MSG_NOSIGNAL`. It was developed on macOS and is meant to be built and tested on
+Linux (the TSAM server, Ubuntu 24.04). The client uses only POSIX calls and runs on
+both macOS and Linux.
 
 ## Protocol
 
 Every command and every reply is sent as one frame:
 
 ```
-<SOH><length><STX><command><ETX>
+<SOH><length><STX><payload><ETX>
 ```
 
 `SOH`, `STX` and `ETX` are the bytes 0x01, 0x02 and 0x03. `length` is a 16-bit
 unsigned integer in network byte order (big-endian). It counts the whole frame,
-including the 5 framing bytes. The command between STX and ETX may be at most
-**5000 bytes**, so a frame is at most 5005 bytes.
+including the 5 framing bytes. A payload may be at most **5000 bytes**, so a frame
+is at most 5005 bytes.
 
-### Users and UIDs
-
-A user picks a name with `LOGIN`. The server combines it with the number of the
-connection to form the user's **UID**. For example, `bob` logging in on connection 3
-becomes `bob3`. All other commands identify users by UID.
-
-- A name is 1-32 ASCII letters (`A-Z`, `a-z`); no digits, spaces or punctuation.
-- A UID is a name followed by decimal digits.
-- Each connection can log in once. A user who reconnects gets a new UID, and
-  messages for the old UID can still be fetched with `GETMSG,<old uid>`.
-
-### Commands
-
-| Command | Meaning |
-|---|---|
-| `LOGIN,<name>` | Log this connection in as `<name>` (extension) |
-| `LISTUSERS` | List the UIDs of all users currently logged in (extension) |
-| `SENDMSG,<from>,<to>,<message>` | Store `<message>` for user `<to>`, sent by `<from>` |
-| `GETMSG,<uid>` | Return the oldest message stored for `<uid>` and delete it |
-| `STATUSREQ` | List which users have stored messages, and how many |
-
-`<from>`, `<to>` and `<uid>` must be valid UIDs. The message may contain commas and
-may be empty. Command names are case-sensitive.
-
-### Replies
-
-Replies do not repeat the command name. A client knows which command a reply answers
-because the server replies to the commands on one connection in the order they were sent.
+### Commands and replies
 
 | Command | Reply |
 |---|---|
-| `LOGIN` | `REP_LOGIN:<uid>`, or `REP_LOGIN: Already logged in as <uid>` |
-| `LISTUSERS` | `<uid1>,<uid2>,...` (sorted), or `EMPTY` if nobody is logged in |
-| `SENDMSG` | `REP_SENDMSG: Message successfully sent to <to>`, or `REP_SENDMSG: Recipient doesn't exist` |
-| `GETMSG` | `REP_GETMSG:<message>`, or `REP_GETMSG: No message` |
-| `STATUSREQ` | `<uid1>:<count1>,<uid2>:<count2>,...`, or `EMPTY` (format fixed by the assignment) |
-| unknown or malformed command | `command does not exist` |
+| `SENDMSG,<from>,<to>,<message>` | `OK` |
+| `GETMSG,<user>` | `<from>,<message>` (the oldest message for `<user>`, which is then deleted), or `NO_MESSAGE` |
+| `STATUSREQ` | `<user1>:<count1>,<user2>:<count2>,...`, or `EMPTY` (format fixed by the assignment) |
+| anything else | `ERROR,command does not exist or is malformed` |
+
+- Usernames are 1-32 ASCII letters (`A-Z`, `a-z`). This keeps `STATUSREQ` replies
+  unambiguous, since a name cannot contain `,` or `:`.
+- The message may contain commas and may be empty.
+- Command names are case-sensitive, and commands take no extra fields: `STATUSREQ,x`
+  is malformed.
+- Users are just names. There is no login. Anyone can send a message to any name, and
+  anyone can fetch the messages for any name, as the assignment describes. The server
+  only knows connections, so that it can reply on the right socket.
 
 ## Server behaviour
 
-- **SENDMSG** stores the message only if `<to>` is a UID that has logged in at some
-  point since the server started. The recipient does not have to be online. Any other
-  `<to>` gets `Recipient doesn't exist` and nothing is stored. `<from>` is not checked
-  against the sender's own UID.
-- **GETMSG** returns and deletes the oldest message for that UID. Anyone may fetch
-  messages for any UID. The reply contains only the message text, not the sender.
-- **STATUSREQ** lists only users with at least one stored message, in alphabetical
-  order of UID.
-- **LISTUSERS** lists users that are logged in right now. A user disappears from the
-  list when their connection closes.
-- **Unknown or malformed commands** are discarded, and the server answers
-  `command does not exist`. This covers an unknown name, a wrong number of fields, an
-  invalid name or UID, and the wrong case (`statusreq`).
-- **Malformed frames** (bytes outside a frame, a length below 5 or above 5005, a missing
-  STX or ETX) are discarded without a reply. The server then looks for the next SOH
-  and keeps serving that client. Every discard is logged with its reason.
-- **Partial and joined frames.** TCP may split a frame across reads or join several into
-  one. The server keeps a buffer per client and only processes complete frames.
-- **Disconnects.** Commands a client sent just before disconnecting are still processed.
-  The client is then logged out. Its stored messages stay. An incomplete frame left
-  behind is logged and dropped.
-- **Many clients.** A single thread serves all clients with `epoll`. It sleeps until a
-  socket is ready, so CPU use is zero when idle. Replies that do not fit in the socket
-  buffer are queued and sent when the client reads, without blocking other clients.
+- **Many clients.** A single thread serves all clients with level-triggered `epoll`.
+  It sleeps until a socket is ready, so it uses no CPU while idle.
+- **Partial and joined frames.** TCP can split a frame across reads or join several
+  frames together. Each client has an input buffer, and a command is handled only once
+  its whole frame has arrived. Several commands per connection are fine.
+- **Slow clients.** Each client has an output buffer. A reply that does not fit in the
+  socket buffer is sent later, when the socket becomes writable. Other clients are not
+  blocked.
+- **Messages** are stored per recipient, oldest first. The recipient does not have to
+  be connected. `GETMSG` hands out one message and deletes it. `STATUSREQ` lists only
+  users with at least one message, in alphabetical order.
+- **Malformed commands.** Unknown names, a wrong number of fields, invalid usernames
+  and wrong case are ignored, and the server replies with
+  `ERROR,command does not exist or is malformed`.
+- **Malformed frames.** Bytes outside a frame, a length below 5 or above 5005, and a
+  missing STX or ETX are discarded without a reply. The server resynchronises on the
+  next SOH and keeps serving the client. Each discard is logged with its reason.
+- **Disconnects.** The client's buffers are freed, and an incomplete frame left behind
+  is logged. Its stored messages stay.
 - **Errors.**
-  - Startup failures are logged and the server exits with status 1: port in use,
-    `server.log` cannot be opened, socket/epoll errors.
-  - An error on one client's connection closes only that client, and the reason is logged.
-  - When the server runs out of file descriptors, it accepts and immediately closes new
-    connections, so it never spins.
-- **Persistence.** Stored messages and known users are kept in memory only, and are lost
-  when the server stops.
+  - Startup failures make the server exit with status 1, with a message on stderr and
+    in the log. Examples are a port already in use, `server.log` that cannot be opened,
+    and socket or epoll errors.
+  - An error on one client's connection (`recv`/`send` failure, connection reset)
+    closes only that client, and the reason is logged.
+  - `EINTR` and `EAGAIN` are harmless and retried.
+  - A client that disappears never kills the server with SIGPIPE (`MSG_NOSIGNAL`).
+  - When the server runs out of file descriptors, it uses a reserved descriptor to
+    accept and immediately close the waiting connection. The listening socket therefore
+    never makes the loop spin.
+- Messages are kept in memory only and are lost when the server stops.
 
 ### Server log
 
-One line per event, timestamped in local time with the UTC offset (Common Log Format):
+There is one line per event. Times are local, with the UTC offset (Common Log Format):
 
 ```
-[12/Oct/2026:18:23:45 +0000] client 1 RECV SENDMSG,alice1,bob2,hi
-[12/Oct/2026:18:23:45 +0000] STATE stored message from alice1 for bob2 (1 waiting for them); 2 connected, 2 logged in, 1 message(s) stored for 1 user(s)
-[12/Oct/2026:18:23:45 +0000] client 1 SEND REP_SENDMSG: Message successfully sent to bob2
+[12/Oct/2026:18:23:45 +0000] client 1 connected (1 connected)
+[12/Oct/2026:18:23:45 +0000] client 1 RECV SENDMSG,alice,bob,hi
+[12/Oct/2026:18:23:45 +0000] STATE stored message from alice for bob (1 waiting for them, 1 stored in total)
+[12/Oct/2026:18:23:45 +0000] client 1 SEND OK
 ```
 
 The log records:
 - every command received (`RECV`) and every reply sent (`SEND`)
 - connects and disconnects, with the reason
-- rejected commands and discarded frames, with the reason
-- `STATE` lines showing how many clients are connected and messages stored
-- queued output (backpressure)
+- rejected commands and discarded frames
+- `STATE` lines with stored-message counts
+- slow-client queueing
 - startup and shutdown
 
-Control characters in client data are written as `\xNN`.
+Control characters sent by clients are written as `\xNN`.
 
 ## Client behaviour
 
-- Prints every command sent and every reply received with a timestamp, plus
-  informational lines:
+- Prints every command sent and every reply received with a timestamp:
   ```
-  2026-10-12 18:23:45 SENT: LOGIN,alice
-  2026-10-12 18:23:45 RECV: REP_LOGIN:alice1
-  2026-10-12 18:23:45 INFO: your user id is alice1
+  2026-10-12 18:23:45 SENT: GETMSG,bob
+  2026-10-12 18:23:45 RECV: alice,hello bob
   ```
-- Matches each reply to the oldest command still waiting for one, and checks that the
-  reply has the format expected for that command. A reply that does not match is
-  printed with a warning.
-- Uses `poll` to wait on stdin and the server at the same time, with no busy-waiting.
-  Incoming bytes are reassembled into complete frames.
-- Ignores empty lines and strips a trailing `\r`. A command longer than 5000 bytes is
-  not sent, and an error is printed instead.
+- Uses `poll` to wait on stdin and the server at the same time, so it never
+  busy-waits. Incoming bytes are reassembled into complete frames.
+- Skips empty lines and strips a trailing `\r`. A command longer than 5000 bytes is not
+  sent, and an error is printed instead.
 - When stdin ends (Ctrl-D, or the end of piped input), the client waits up to 5 seconds
-  for replies it is still owed, then exits.
-- Exits when the server closes the connection.
-- Exit status is 0 on a normal end. It is 1 on errors (cannot connect, send/recv failure,
-  replies lost or timed out).
-- Stdout is line-buffered, so output redirected to a file is written immediately.
+  for the replies it is still owed, then exits. It also exits when the server closes the
+  connection.
+- Exit status is 0 on a normal end and 1 on errors: cannot connect, send or recv
+  failure, or a missing reply.
+- Stdout is line-buffered, so output redirected to a file appears immediately.
 
 ## Known limitations
 
-- A stored message whose text is exactly ` No message` (with the leading space) cannot be
-  told apart from the `REP_GETMSG: No message` reply.
-- A `STATUSREQ` or `LISTUSERS` reply longer than 5000 bytes cannot be framed. The server
-  logs an error and sends no reply.
-- There is no limit on the number of stored messages per user.
+- A `STATUSREQ` reply longer than 5000 bytes cannot be framed. The server logs it and
+  sends no reply.
+- There is no limit on the number of stored messages.
