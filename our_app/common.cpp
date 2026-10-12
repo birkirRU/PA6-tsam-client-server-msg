@@ -177,3 +177,17 @@ namespace tool {
         return (unsigned int) val;
     }
 }
+
+bool sendAll(int fd, const std::vector<char>& data)
+{
+    size_t sent = 0;
+    while (sent < data.size()) {
+        ssize_t n = send(fd, data.data() + sent, data.size() - sent, 0);
+        if (n < 0) {
+            if (errno == EINTR) continue;   // interrupted by a signal, retry
+            return false;                   // connection broken
+        }
+        sent += n;
+    }
+    return true;
+}
