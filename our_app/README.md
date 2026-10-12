@@ -3,10 +3,10 @@
 A mail server (`tsamserver`) and a client (`tsamclient`) that talk over TCP using
 the framed protocol from the assignment.
 
-| File | Contents |
-|---|---|
-| `server.cpp` | The server: one epoll loop, the message store and the log |
-| `client.cpp` | The client: a poll loop over stdin and the server socket |
+| File            | Contents                                                              |
+|-----------------|-----------------------------------------------------------------------|
+| `server.cpp`    | The server: one epoll loop, the message store and the log             |
+| `client.cpp`    | The client: a poll loop over stdin and the server socket              |
 | `common.h/.cpp` | Shared code: framing, command field splitting, name check, timestamps |
 
 ## Compiling and running
@@ -17,53 +17,34 @@ make                    # builds tsamserver and tsamclient
 ./tsamclient 127.0.0.1 4044
 ```
 
-`make debug` builds `tsamserver_debug` and `tsamclient_debug` with `-g`, and
-`make clean` removes the binaries. Building needs `g++` (C++20) and `make`. No
-third-party libraries are used.
-
 The server logs to `server.log` in the directory it is started from. The file is
 emptied at every start, so one run produces the log of one session. Stop the server
 with Ctrl-C (or `kill`), which writes a final log line.
 
-The client reads one command per line from stdin. To record a session:
-`./tsamclient 127.0.0.1 4044 | tee client-output.txt`.
-
 ## Operating system
 
 The server runs on **Linux only**, because it uses `epoll`, `accept4`, `SOCK_NONBLOCK`
-and `MSG_NOSIGNAL`. It was developed on macOS and is meant to be built and tested on
-Linux (the TSAM server, Ubuntu 24.04). The client uses only POSIX calls and runs on
-both macOS and Linux.
+and `MSG_NOSIGNAL`. It is meant to be built and tested on Linux (the TSAM server, Ubuntu 24.04). 
 
-## Protocol
+## Commands
 
-Every command and every reply is sent as one frame:
+Commands and replies use the framing from the assignment. We read the 5000-byte limit as
+applying to the command text between STX and ETX, so a frame can be up to 5005 bytes.
 
-```
-<SOH><length><STX><payload><ETX>
-```
-
-`SOH`, `STX` and `ETX` are the bytes 0x01, 0x02 and 0x03. `length` is a 16-bit
-unsigned integer in network byte order (big-endian). It counts the whole frame,
-including the 5 framing bytes. A payload may be at most **5000 bytes**, so a frame
-is at most 5005 bytes.
-
-### Commands and replies
-
-| Command | Reply |
-|---|---|
-| `SENDMSG,<from>,<to>,<message>` | `OK` |
-| `GETMSG,<user>` | `<from>,<message>` (the oldest message for `<user>`, which is then deleted), or `NO_MESSAGE` |
-| `STATUSREQ` | `<user1>:<count1>,<user2>:<count2>,...`, or `EMPTY` (format fixed by the assignment) |
-| anything else | `ERROR,command does not exist or is malformed` |
+| Command                         | Reply                                                                                        |
+|---------------------------------|----------------------------------------------------------------------------------------------|
+| `SENDMSG,<from>,<to>,<message>` | `OK`                                                                                         |
+| `GETMSG,<user>`                 | `<from>,<message>` (the oldest message for `<user>`, which is then deleted), or `NO_MESSAGE` |
+| `STATUSREQ`                     | `<user1>:<count1>,<user2>:<count2>,...`, or `EMPTY` (format fixed by the assignment)         |
+| anything else                   | `ERROR,command does not exist or is malformed`                                               |
 
 - Usernames are 1-32 ASCII letters (`A-Z`, `a-z`). This keeps `STATUSREQ` replies
   unambiguous, since a name cannot contain `,` or `:`.
 - The message may contain commas and may be empty.
 - Command names are case-sensitive, and commands take no extra fields: `STATUSREQ,x`
   is malformed.
-- Users are just names. There is no login. Anyone can send a message to any name, and
-  anyone can fetch the messages for any name, as the assignment describes. The server
+- Users are just names. Anyone can send a message to any name, and
+  anyone can fetch the messages for any name. The server
   only knows connections, so that it can reply on the right socket.
 
 ## Server behaviour
