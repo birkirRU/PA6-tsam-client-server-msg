@@ -24,7 +24,7 @@ with Ctrl-C (or `kill`), which writes a final log line.
 ## Operating system
 
 The server runs on **Linux only**, because it uses `epoll`, `accept4`, `SOCK_NONBLOCK`
-and `MSG_NOSIGNAL`. It is meant to be built and tested on Linux (the TSAM server, Ubuntu 24.04). 
+and `MSG_NOSIGNAL`. It is meant to be built and tested on Linux (the TSAM server, Ubuntu 24.04). The server and client applications where developed on Rocky Linux 9. 
 
 ## Commands
 
