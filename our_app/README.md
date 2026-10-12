@@ -31,7 +31,7 @@ The client reads one command per line from stdin. To record a session:
 ## Operating system
 
 The server runs on **Linux only**, because it uses `epoll`, `accept4`, `SOCK_NONBLOCK`
-and `MSG_NOSIGNAL`. It was developed on macOS and is meant to be built and tested on
+and `MSG_NOSIGNAL`. Tested on
 Linux (the TSAM server, Ubuntu 24.04). The client uses only POSIX calls and runs on
 both macOS and Linux.
 
