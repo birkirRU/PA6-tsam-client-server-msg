@@ -1,12 +1,12 @@
 #include "server.h"
 
-// #include "logger.h"
+#include "logger.h"
 
 void Server::run() {
     for (;;) {
-        std::vector<Incoming> incoming = net_.wait();  // 1. network turn
-        buffering_turn(incoming);                      // 2. buffering turn
-        processing_turn();                             // 3. processing turn
+        std::vector<Incoming> incoming = net_.wait();  // network turn
+        buffering_turn(incoming);                      
+        processing_turn();                             
     }
 }
 
@@ -21,7 +21,7 @@ void Server::buffering_turn(const std::vector<Incoming>& incoming) {
         std::vector<comproto::base_com*> msgs;
         int bad = comproto::frame::extract_frames(buf, msgs, comproto::frame::direction::to_server);
         for (comproto::base_com* m : msgs) pending_.push_back({in.id, m});
-        // if (bad > 0) logmsg("client " + std::to_string(in.id) + ": discarded " + std::to_string(bad) + " bad frame(s)");
+        if (bad > 0) logmsg("client " + std::to_string(in.id) + ": discarded " + std::to_string(bad) + " bad frame(s)");
     }
 }
 
@@ -36,7 +36,7 @@ void Server::processing_turn() {
 
 void Server::handle(comproto::ClientID from, comproto::base_com* msg) {
     using namespace comproto::command;
-    // logmsg("client " + std::to_string(from) + " RECV " + msg->to_string());
+    logmsg("client " + std::to_string(from) + " RECV " + msg->to_string());
 
     if (auto* sm = dynamic_cast<comproto::command::sendmsg*>(msg)) {
         store_[sm->recipient].push_back({sm->sender, sm->message});
@@ -66,5 +66,5 @@ void Server::handle(comproto::ClientID from, comproto::base_com* msg) {
 void Server::reply(comproto::ClientID to, const std::string& text) {
     comproto::response r(text);
     net_.send_to(to, comproto::frame::encode(&r));
-    // logmsg("client " + std::to_string(to) + " SEND " + text);
+    logmsg("client " + std::to_string(to) + " SEND " + text);
 }

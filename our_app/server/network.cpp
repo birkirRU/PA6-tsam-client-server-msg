@@ -7,7 +7,7 @@
 #include <cstdio>
 #include <cstdlib>
 
-// #include "logger.h"
+#include "logger.h"
 
 Network::Network(uint16_t port) {
     listen_fd_ = socket(AF_INET, SOCK_STREAM | SOCK_NONBLOCK, 0);
@@ -22,7 +22,7 @@ Network::Network(uint16_t port) {
     listen(listen_fd_, SOMAXCONN);
 
     poller_.add(listen_fd_);
-    // logmsg("listening on port " + std::to_string(port));
+    logmsg("listening on port " + std::to_string(port));
 }
 
 std::vector<Incoming> Network::wait() {
@@ -37,7 +37,7 @@ std::vector<Incoming> Network::wait() {
             conns_[id] = Conn{fd, "", false};
             id_of_[fd] = id;
             poller_.add(fd);
-            // logmsg("client " + std::to_string(id) + " connected");
+            logmsg("client " + std::to_string(id) + " connected");
             continue;
         }
 
@@ -88,5 +88,5 @@ void Network::close_conn(comproto::ClientID id) {
     close(fd);
     id_of_.erase(fd);
     conns_.erase(id);
-    // logmsg("client " + std::to_string(id) + " disconnected");
+    logmsg("client " + std::to_string(id) + " disconnected");
 }

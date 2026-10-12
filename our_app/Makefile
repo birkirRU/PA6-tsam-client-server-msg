@@ -8,7 +8,8 @@ SOURCES_SERVER = server/server.cpp \
 
 HEADERS_SERVER = server/poller.h \
 				 server/server.h \
-				 server/network.h 
+				 server/network.h \
+			 	 server/logger.h
 
 
 SOURCES_CLIENT = client.cpp
