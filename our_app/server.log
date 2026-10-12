@@ -1,0 +1,58 @@
+[12/Oct/2026:22:40:35 +0200] tsamserver started on port 4044 (pid 348523)
+[12/Oct/2026:22:40:47 +0200] client 1 connected (1 connected)
+[12/Oct/2026:22:41:45 +0200] client 2 connected (2 connected)
+[12/Oct/2026:22:43:57 +0200] client 1 RECV STATUSREQ
+[12/Oct/2026:22:43:57 +0200] client 1 SEND EMPTY
+[12/Oct/2026:22:44:14 +0200] client 1 RECV SENDMSG,MikeTyson,StephenHawking,Yo Professor! Everybody has a plan until they get punched in the mouth. What's YOUR plan?
+[12/Oct/2026:22:44:14 +0200] STATE stored message from MikeTyson for StephenHawking (1 waiting for them, 1 stored in total)
+[12/Oct/2026:22:44:14 +0200] client 1 SEND OK
+[12/Oct/2026:22:44:26 +0200] client 1 RECV SENDMSG,MikeTyson,StephenHawking,Also, is a black hole heavier than a heavyweight?
+[12/Oct/2026:22:44:26 +0200] STATE stored message from MikeTyson for StephenHawking (2 waiting for them, 2 stored in total)
+[12/Oct/2026:22:44:26 +0200] client 1 SEND OK
+[12/Oct/2026:22:44:40 +0200] client 2 RECV STATUSREQ
+[12/Oct/2026:22:44:40 +0200] client 2 SEND StephenHawking:2
+[12/Oct/2026:22:44:50 +0200] client 2 RECV GETMSG,StephenHawking
+[12/Oct/2026:22:44:50 +0200] STATE delivered message from MikeTyson to StephenHawking (1 left for them, 1 stored in total)
+[12/Oct/2026:22:44:50 +0200] client 2 SEND MikeTyson,Yo Professor! Everybody has a plan until they get punched in the mouth. What's YOUR plan?
+[12/Oct/2026:22:44:57 +0200] client 2 RECV GETMSG,StephenHawking
+[12/Oct/2026:22:44:57 +0200] STATE delivered message from MikeTyson to StephenHawking (0 left for them, 0 stored in total)
+[12/Oct/2026:22:44:57 +0200] client 2 SEND MikeTyson,Also, is a black hole heavier than a heavyweight?
+[12/Oct/2026:22:45:19 +0200] client 2 RECV SENDMSG,StephenHawking,MikeTyson,My plan, Mike, is to stay at a safe distance. Roughly one event horizon.
+[12/Oct/2026:22:45:19 +0200] STATE stored message from StephenHawking for MikeTyson (1 waiting for them, 1 stored in total)
+[12/Oct/2026:22:45:19 +0200] client 2 SEND OK
+[12/Oct/2026:22:45:35 +0200] client 2 RECV SENDMSG,StephenHawking,MikeTyson,And yes. A black hole would win every weight class, but it has terrible footwork.
+[12/Oct/2026:22:45:35 +0200] STATE stored message from StephenHawking for MikeTyson (2 waiting for them, 2 stored in total)
+[12/Oct/2026:22:45:35 +0200] client 2 SEND OK
+[12/Oct/2026:22:45:52 +0200] client 2 RECV SENDMSG,StephenHawking,MikeTyson,P.S. Time slows down near massive objects. That explains your 91-second fights.
+[12/Oct/2026:22:45:52 +0200] STATE stored message from StephenHawking for MikeTyson (3 waiting for them, 3 stored in total)
+[12/Oct/2026:22:45:52 +0200] client 2 SEND OK
+[12/Oct/2026:22:45:58 +0200] client 1 RECV STATUSREQ
+[12/Oct/2026:22:45:58 +0200] client 1 SEND MikeTyson:3
+[12/Oct/2026:22:46:08 +0200] client 1 RECV GETMSG,MikeTyson
+[12/Oct/2026:22:46:08 +0200] STATE delivered message from StephenHawking to MikeTyson (2 left for them, 2 stored in total)
+[12/Oct/2026:22:46:08 +0200] client 1 SEND StephenHawking,My plan, Mike, is to stay at a safe distance. Roughly one event horizon.
+[12/Oct/2026:22:46:13 +0200] client 1 RECV GETMSG,MikeTyson
+[12/Oct/2026:22:46:13 +0200] STATE delivered message from StephenHawking to MikeTyson (1 left for them, 1 stored in total)
+[12/Oct/2026:22:46:13 +0200] client 1 SEND StephenHawking,And yes. A black hole would win every weight class, but it has terrible footwork.
+[12/Oct/2026:22:46:22 +0200] client 1 RECV GETMSG,MikeTyson
+[12/Oct/2026:22:46:22 +0200] STATE delivered message from StephenHawking to MikeTyson (0 left for them, 0 stored in total)
+[12/Oct/2026:22:46:22 +0200] client 1 SEND StephenHawking,P.S. Time slows down near massive objects. That explains your 91-second fights.
+[12/Oct/2026:22:46:30 +0200] client 1 RECV GETMSG,MikeTyson
+[12/Oct/2026:22:46:30 +0200] client 1 SEND NO_MESSAGE
+[12/Oct/2026:22:46:38 +0200] client 1 RECV STATUSREQ
+[12/Oct/2026:22:46:38 +0200] client 1 SEND EMPTY
+[12/Oct/2026:22:47:01 +0200] client 1 RECV SENDMSG,MikeTyson,StephenHawking,Respect. You're the only guy who ever knocked ME out, with a theory.
+[12/Oct/2026:22:47:01 +0200] STATE stored message from MikeTyson for StephenHawking (1 waiting for them, 1 stored in total)
+[12/Oct/2026:22:47:01 +0200] client 1 SEND OK
+[12/Oct/2026:22:47:16 +0200] client 1 RECV PUNCH,MikeTyson,StephenHawking
+[12/Oct/2026:22:47:16 +0200] client 1: rejected unknown or malformed command 'PUNCH'
+[12/Oct/2026:22:47:16 +0200] client 1 SEND ERROR,command does not exist or is malformed
+[12/Oct/2026:22:47:23 +0200] client 2 RECV STATUSREQ
+[12/Oct/2026:22:47:23 +0200] client 2 SEND StephenHawking:1
+[12/Oct/2026:22:47:30 +0200] client 2 RECV GETMSG,StephenHawking
+[12/Oct/2026:22:47:30 +0200] STATE delivered message from MikeTyson to StephenHawking (0 left for them, 0 stored in total)
+[12/Oct/2026:22:47:30 +0200] client 2 SEND MikeTyson,Respect. You're the only guy who ever knocked ME out, with a theory.
+[12/Oct/2026:22:47:36 +0200] client 2 RECV STATUSREQ
+[12/Oct/2026:22:47:36 +0200] client 2 SEND EMPTY
+[12/Oct/2026:22:48:03 +0200] client 2 disconnected: closed the connection (1 connected)
+[12/Oct/2026:22:48:06 +0200] client 1 disconnected: closed the connection (0 connected)

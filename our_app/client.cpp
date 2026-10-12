@@ -1,10 +1,3 @@
-// tsamclient: sends commands typed on stdin to the server and prints the replies.
-//
-// Usage: ./tsamclient <ip> <port>
-//
-// Every command sent and every reply received is printed with a timestamp.
-// poll() waits on stdin and the socket at the same time, so the client never busy-waits.
-
 #include <netdb.h>
 #include <poll.h>
 #include <sys/socket.h>

@@ -1,14 +1,3 @@
-// tsamserver: stores messages for users and hands them out again.
-//
-// Usage: ./tsamserver <port>
-//
-// One thread serves every client with epoll: it sleeps until a socket is ready,
-// so it uses no CPU while idle. Each client has an input buffer (bytes that do
-// not form a complete frame yet) and an output buffer (reply bytes the socket
-// could not take yet). Everything is logged to server.log.
-//
-// Linux only (epoll, accept4, SOCK_NONBLOCK, MSG_NOSIGNAL).
-
 #include <arpa/inet.h>
 #include <fcntl.h>
 #include <netinet/in.h>

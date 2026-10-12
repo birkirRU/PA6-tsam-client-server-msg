@@ -1,0 +1,40 @@
+2026-10-12 22:38:07 INFO: connected to 127.0.0.1:4044
+2026-10-12 22:38:07 INFO: commands: SENDMSG,<from>,<to>,<message>  GETMSG,<user>  STATUSREQ
+2026-10-12 22:38:07 SENT: STATUSREQ
+2026-10-12 22:38:07 RECV: EMPTY
+2026-10-12 22:38:09 SENT: SENDMSG,MikeTyson,StephenHawking,Yo Professor! Everybody has a plan until they get punched in the mouth. What's YOUR plan?
+2026-10-12 22:38:09 RECV: OK
+2026-10-12 22:38:10 SENT: SENDMSG,MikeTyson,StephenHawking,Also, is a black hole heavier than a heavyweight?
+2026-10-12 22:38:10 RECV: OK
+2026-10-12 22:38:12 SENT: STATUSREQ
+2026-10-12 22:38:12 RECV: StephenHawking:2
+2026-10-12 22:38:13 SENT: GETMSG,StephenHawking
+2026-10-12 22:38:13 RECV: MikeTyson,Yo Professor! Everybody has a plan until they get punched in the mouth. What's YOUR plan?
+2026-10-12 22:38:15 SENT: GETMSG,StephenHawking
+2026-10-12 22:38:15 RECV: MikeTyson,Also, is a black hole heavier than a heavyweight?
+2026-10-12 22:38:16 SENT: SENDMSG,StephenHawking,MikeTyson,My plan, Mike, is to stay at a safe distance. Roughly one event horizon.
+2026-10-12 22:38:16 RECV: OK
+2026-10-12 22:38:18 SENT: SENDMSG,StephenHawking,MikeTyson,And yes. A black hole would win every weight class, but it has terrible footwork.
+2026-10-12 22:38:18 RECV: OK
+2026-10-12 22:38:19 SENT: SENDMSG,StephenHawking,MikeTyson,P.S. Time slows down near massive objects. That explains your 91-second fights.
+2026-10-12 22:38:19 RECV: OK
+2026-10-12 22:38:21 SENT: STATUSREQ
+2026-10-12 22:38:21 RECV: MikeTyson:3
+2026-10-12 22:38:22 SENT: GETMSG,MikeTyson
+2026-10-12 22:38:22 RECV: StephenHawking,My plan, Mike, is to stay at a safe distance. Roughly one event horizon.
+2026-10-12 22:38:24 SENT: GETMSG,MikeTyson
+2026-10-12 22:38:24 RECV: StephenHawking,And yes. A black hole would win every weight class, but it has terrible footwork.
+2026-10-12 22:38:25 SENT: SENDMSG,MikeTyson,StephenHawking,Respect. You're the only guy who ever knocked ME out, with a theory.
+2026-10-12 22:38:25 RECV: OK
+2026-10-12 22:38:27 SENT: GETMSG,MikeTyson
+2026-10-12 22:38:27 RECV: StephenHawking,P.S. Time slows down near massive objects. That explains your 91-second fights.
+2026-10-12 22:38:28 SENT: GETMSG,MikeTyson
+2026-10-12 22:38:28 RECV: NO_MESSAGE
+2026-10-12 22:38:30 SENT: STATUSREQ
+2026-10-12 22:38:30 RECV: StephenHawking:1
+2026-10-12 22:38:31 SENT: GETMSG,StephenHawking
+2026-10-12 22:38:31 RECV: MikeTyson,Respect. You're the only guy who ever knocked ME out, with a theory.
+2026-10-12 22:38:33 SENT: STATUSREQ
+2026-10-12 22:38:33 RECV: EMPTY
+2026-10-12 22:38:34 SENT: PUNCH,MikeTyson,StephenHawking
+2026-10-12 22:38:34 RECV: ERROR,command does not exist or is malformed
