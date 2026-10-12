@@ -141,7 +141,7 @@ Server::Server(uint16_t port) {
     if (epoll_ctl(ep_, EPOLL_CTL_ADD, listen_fd_, &ev) < 0) fatal(errstr("epoll_ctl(ADD listen)"));
 
     spare_fd_ = open("/dev/null", O_RDONLY);
-    logmsg("listening on port " + std::to_string(port));
+    logmsg("tsamserver started on port " + std::to_string(port) + " (pid " + std::to_string(getpid()) + ")");
 }
 
 void Server::run() {
